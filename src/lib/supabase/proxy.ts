@@ -1,15 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { supabaseEnv } from "./env"
 
 const PROTECTED_PREFIXES = ["/dashboard", "/transacoes"]
 const AUTH_PAGES = ["/login"]
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
+  const { url, key } = supabaseEnv()
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {
@@ -33,10 +35,10 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const redirectTo = (path: string) => {
-    const url = request.nextUrl.clone()
-    url.pathname = path
-    url.search = ""
-    const redirect = NextResponse.redirect(url)
+    const target = request.nextUrl.clone()
+    target.pathname = path
+    target.search = ""
+    const redirect = NextResponse.redirect(target)
     response.cookies.getAll().forEach((c) => redirect.cookies.set(c))
     return redirect
   }

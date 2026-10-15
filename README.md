@@ -35,9 +35,22 @@ o saldo do mês num dashboard visual.
 
 ## Deploy na Vercel
 
-1. Suba o repositório para o GitHub e importe-o na Vercel.
-2. Cadastre `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em *Environment Variables*.
-3. No Supabase, atualize a *Site URL* e adicione `https://SEU-APP.vercel.app/auth/confirm` às *Redirect URLs*.
+1. Em [vercel.com](https://vercel.com) → **Add New → Project**, importe o repositório do GitHub.
+   O framework (Next.js) e os comandos de build são detectados automaticamente.
+2. Em **Environment Variables**, cadastre para *Production*, *Preview* e *Development*:
+
+   | Nome | Valor |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://SEU-PROJETO.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` |
+
+   Se faltar alguma, o app mostra um erro explicando qual variável está ausente.
+3. Clique em **Deploy**.
+4. No Supabase → **Authentication → URL Configuration**:
+   - **Site URL**: `https://SEU-APP.vercel.app`
+   - **Redirect URLs**: adicione `https://SEU-APP.vercel.app/auth/confirm` (mantenha a de `localhost` para desenvolvimento)
+
+A partir daí, cada `git push` na `main` gera um novo deploy de produção, e cada pull request ganha uma URL de preview.
 
 ## Estrutura
 
@@ -57,6 +70,21 @@ src/app/(app)/transacoes/        lista, filtros, CRUD e exportação
 
 ## Segurança
 
-Cada linha de `transactions` tem `user_id` (preenchido automaticamente com `auth.uid()`), e as
-políticas RLS garantem que cada usuário só lê e altera as próprias transações, inclusive
-em chamadas diretas à API do Supabase.
+**No código**
+- **Row Level Security:** cada linha de `transactions` tem `user_id` (preenchido com `auth.uid()`) e as políticas
+  só permitem ler, criar, editar e excluir as próprias transações, inclusive em chamadas diretas à API.
+- **Validação no banco:** `CHECK` constraints garantem valor > 0, tipo e categoria válidos e descrição até 200 caracteres.
+- **Proteção de rotas:** `src/proxy.ts` valida o token (`getClaims`) e renova a sessão em cookies a cada requisição.
+- **Cabeçalhos HTTP** (`next.config.ts`): Content-Security-Policy (só o próprio app e `*.supabase.co`),
+  HSTS, `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy e Permissions-Policy.
+- **CSV:** descrições que começam com `=`, `+`, `-` ou `@` são neutralizadas para não virarem fórmula no Excel.
+- **Segredos:** só a chave *publishable* é usada, porque ela foi feita para o navegador. `.env.local` não vai para o git.
+  **Nunca** use a `service_role`/secret key neste projeto.
+
+**No painel do Supabase (recomendado antes de divulgar o app)**
+- **Authentication → Sign In / Providers → Email:** mantenha **Confirm email** ligado e defina
+  **Minimum password length = 8** (o formulário já exige 8, mas a regra que vale é a do servidor).
+- **Authentication → Emails → SMTP Settings:** configure um SMTP próprio (Resend, SendGrid…). O SMTP padrão
+  do Supabase envia poucos e-mails por hora e serve só para testes.
+- **Authentication → Rate Limits:** revise os limites de cadastro e login.
+- **Advisors → Security Advisor:** rode e confira se não há alertas.

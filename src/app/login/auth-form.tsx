@@ -15,6 +15,7 @@ const ERRORS: Record<string, string> = {
   "Invalid login credentials": "E-mail ou senha incorretos.",
   "Email not confirmed": "Confirme seu e-mail antes de entrar.",
   "User already registered": "Já existe uma conta com este e-mail.",
+  "Password should be at least 8 characters.": "A senha precisa ter pelo menos 8 caracteres.",
 }
 
 export function AuthForm() {
@@ -81,9 +82,9 @@ export function AuthForm() {
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={isLogin ? undefined : 8}
               autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder={isLogin ? "" : "Mínimo de 6 caracteres"}
+              placeholder={isLogin ? "" : "Mínimo de 8 caracteres"}
             />
           </div>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

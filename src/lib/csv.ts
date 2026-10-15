@@ -1,7 +1,13 @@
 import type { Transaction } from "@/lib/types"
 
-const escape = (value: string) =>
-  /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+/**
+ * Neutraliza injeção de fórmulas (=, +, -, @ ...) que o Excel executaria ao abrir o arquivo
+ * e aplica as aspas do CSV.
+ */
+const escape = (raw: string) => {
+  const value = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
+  return /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+}
 
 /** CSV com ";" e vírgula decimal, que é o que o Excel em pt-BR abre direto. */
 export function toCSV(rows: Transaction[]) {
